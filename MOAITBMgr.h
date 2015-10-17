@@ -14,18 +14,20 @@ class MOAITBMgr :
 	public MOAIGlobalClass< MOAITBMgr, MOAILuaObject > {
 private:
 
-	static int		_init                   ( lua_State* L );
-	static int		_loadSkin               ( lua_State* L );
-	static int		_reloadBitmap           ( lua_State* L );
-	static int		_setTextureLoader       ( lua_State* L );
-	static int		_registerFont           ( lua_State* L );
-	static int		_getFont                ( lua_State* L );
+	static int _init                   ( lua_State* L );
+	static int _loadSkin               ( lua_State* L );
+	static int _reloadBitmap           ( lua_State* L );
+	static int _setTextureLoader       ( lua_State* L );
+	static int _registerFont           ( lua_State* L );
+	static int _getFont                ( lua_State* L );
 
-	static int    _loadWidgets            ( lua_State* L );
-	static int    _loadWidgetsFromFile    ( lua_State* L );
+	static int _loadWidgets            ( lua_State* L );
+	static int _loadWidgetsFromFile    ( lua_State* L );
+	static int _loadWidgetsFromNodeTree( lua_State* L );
+	static int _loadNodeTree           ( lua_State* L );
 
 	// static int		_getDefaultFontFace     ( lua_State* L );
-	static int		_setDefaultFontFace     ( lua_State* L );
+	static int _setDefaultFontFace     ( lua_State* L );
 
 	// static int    _addWidgetFactory       ( lua_State* L );
 	// static int    _removeWidgetFactory    ( lua_State* L );

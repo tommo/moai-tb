@@ -1,5 +1,6 @@
 #include "moai-tb/MOAITBMgr.h"
 #include "moai-tb/MOAITBFontRenderer.h"
+#include "moai-tb/MOAITBNode.h"
 
 #include "moai-sim/pch.h"
 #include "moai-sim/MOAITexture.h"
@@ -128,8 +129,8 @@ int MOAITBMgr::_loadWidgets ( lua_State* L ) {
 	return 0;
 }
 
-//----------------------------------------------------------------//
 
+//----------------------------------------------------------------//
 int MOAITBMgr::_loadWidgetsFromFile ( lua_State* L ) {
 	MOAILuaState state ( L );
 	MOAITBMgr& mgr = MOAITBMgr::Get();
@@ -139,6 +140,31 @@ int MOAITBMgr::_loadWidgetsFromFile ( lua_State* L ) {
 		g_widgets_reader->LoadFile( widget->GetInternal(), fileName );
 	}
 	return 0;
+}
+
+
+//----------------------------------------------------------------//
+int MOAITBMgr::_loadWidgetsFromNodeTree ( lua_State* L ) {
+	MOAILuaState state ( L );
+	MOAITBMgr& mgr = MOAITBMgr::Get();
+	MOAITBWidget* widget = state.GetLuaObject < MOAITBWidget >( 1, 0 );
+	if( widget ) {
+		MOAITBNode* node = state.GetLuaObject < MOAITBNode >( 2, true );
+		if( node ) {
+			g_widgets_reader->LoadNodeTree( widget->GetInternal(), node->GetInternal() );
+		}
+	}
+	return 0;
+}
+
+//----------------------------------------------------------------//
+int MOAITBMgr::_loadNodeTree ( lua_State* L ) {
+	MOAILuaState state ( L );
+	cc8* data = state.GetValue < cc8* >( 1, "" );
+	MOAITBNode* node = new MOAITBNode();
+	node->GetInternal()->ReadData( data );
+	node->PushLuaUserdata( state );
+	return 1;
 }
 
 //----------------------------------------------------------------//
@@ -176,6 +202,8 @@ void MOAITBMgr::RegisterLuaClass(MOAILuaState& state)
 
 		{ "loadWidgetsFromFile", _loadWidgetsFromFile },
 		{ "loadWidgets",         _loadWidgets         },
+		{ "loadWidgetsFromNodeTree", _loadWidgetsFromNodeTree },
+		{ "loadNodeTree",         _loadNodeTree         },
 
 		{ NULL, NULL }
 	};
