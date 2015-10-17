@@ -12,7 +12,6 @@
 #include "tb_font_renderer.h"
 #include "animation/tb_widget_animation.h"
 
-void	register_tbbf_font_renderer();
 
 //----------------------------------------------------------------//
 int MOAITBMgr::_init ( lua_State* L ) {
@@ -23,17 +22,7 @@ int MOAITBMgr::_init ( lua_State* L ) {
 		cc8* lngFile = state.GetValue < cc8* >( 1, "" );
 		tb_core_init( mgr.mRenderer, lngFile );
 		g_font_manager->AddRenderer( new MOAITBFontRenderer() );
-
-		//TEST fonts
-		register_tbbf_font_renderer();
-		g_font_manager->AddFontInfo("resources/default_font/segoe_white_with_shadow.tb.txt", "Segoe");
-		TBFontDescription fd;
-		fd.SetID(TBIDC("Segoe"));
-		fd.SetSize( 20 );
-
-		g_font_manager->SetDefaultFontDescription(fd);
-		TBFontFace *font = g_font_manager->CreateFontFace( fd );
-		font->RenderGlyphs(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~•·åäöÅÄÖ") ;
+		
 	}
 	return 0;
 }

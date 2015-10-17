@@ -1,8 +1,6 @@
 #ifndef MOAI_TB_MGR_H
 #define MOAI_TB_MGR_H
 
-#define MACOSX
-
 #include <moai-core/headers.h>
 #include <moai-sim/headers.h>
 
