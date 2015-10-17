@@ -14,6 +14,60 @@
 #include "animation/tb_widget_animation.h"
 
 
+
+//----------------------------------------------------------------//
+MOAITBImageLoader::MOAITBImageLoader():
+	mWidth( 0 ),
+	mHeight( 0 ),
+	mImage( 0 )
+{
+}
+
+MOAITBImageLoader::~MOAITBImageLoader() {
+	if( this->mImage ) {
+		delete this->mImage;
+	}
+}
+
+int MOAITBImageLoader::Width() {
+	return this->mWidth;
+}
+
+int MOAITBImageLoader::Height() {
+	return this->mHeight;
+}
+
+bool MOAITBImageLoader::Init( cc8* filename ) {
+	MOAIImage* img = new MOAIImage();
+	bool succ = img->Load( filename, MOAIImageTransform::TRUECOLOR );
+
+	if( !succ ) {
+		delete img;
+		this->mImage = NULL;
+		return false;
+
+	} else {
+		if( img->GetColorFormat() != ZLColor::RGBA_8888 ) {
+			MOAIImage* converted = new MOAIImage();
+			converted->Convert( *img, ZLColor::RGBA_8888, MOAIImage::TRUECOLOR );
+			delete img;
+			this->mImage = converted;
+		} else {
+			this->mImage = img;
+		}
+		this->mWidth = this->mImage->GetWidth();
+		this->mHeight = this->mImage->GetHeight();
+		return succ;
+
+	}
+}
+
+uint32* MOAITBImageLoader::Data() {
+	if( !this->mImage ) return 0;
+	return (uint32*)this->mImage->GetBitmap();
+}
+
+
 //----------------------------------------------------------------//
 int MOAITBMgr::_init ( lua_State* L ) {
 	MOAILuaState state ( L );
@@ -50,15 +104,13 @@ int MOAITBMgr::_reloadBitmap( lua_State* L ) {
 }
 
 //----------------------------------------------------------------//
-int MOAITBMgr::_setTextureLoader ( lua_State* L ) {
+int MOAITBMgr::_setLookupCallback ( lua_State* L ) {
 	MOAILuaState state ( L );
 	MOAITBMgr& mgr = MOAITBMgr::Get();
-	if( state.IsType( 1, LUA_TFUNCTION ) && state.IsType( 2, LUA_TFUNCTION ) ){
-		mgr.mOnLoadTexture.SetRef ( state, 1 );
-		mgr.mOnUnloadTexture.SetRef ( state, 2 );
+	if( state.IsType( 1, LUA_TFUNCTION ) ){
+		mgr.mLookupCallback.SetRef ( state, 1 );
 	} else {
-		mgr.mOnLoadTexture.Clear();
-		mgr.mOnUnloadTexture.Clear();
+		mgr.mLookupCallback.Clear();
 	}
 	return 0;
 }
@@ -197,7 +249,7 @@ void MOAITBMgr::RegisterLuaClass(MOAILuaState& state)
 		{ "loadSkin",            _loadSkin            },
 		{ "reloadBitmap",        _reloadBitmap        },
 		{ "init",                _init                },
-		{ "setTextureLoader",    _setTextureLoader    },
+		{ "setLookupCallback",   _setLookupCallback   },
 		{ "setDefaultFontFace",  _setDefaultFontFace  },
 
 		{ "loadWidgetsFromFile", _loadWidgetsFromFile },
@@ -244,6 +296,20 @@ MOAIFont* MOAITBMgr::GetFont ( STLString faceName ) {
 	}
 }
 
+TBImageLoader* MOAITBMgr::CreateImageLoader( cc8* filename ) {
+	MOAITBImageLoader* loader = new MOAITBImageLoader();
+	MOAIScopedLuaState state = MOAILuaRuntime::Get ().State ();
+	if ( this->mLookupCallback.PushRef ( state )) {
+		state.Push( filename );
+		state.DebugCall ( 1, 1 );
+		filename = state.GetValue< cc8* >( -1, 0 );
+	}
+	if( filename && loader->Init( filename ) ) {
+		return loader;
+	}
+	delete loader;
+	return nullptr;
+}
 
 //----------------------------------------------------------------//
 //----------------------------------------------------------------//
@@ -253,67 +319,7 @@ void TBSystem::RescheduleTimer(double fire_time)
 	// mgr.RescheduleTimer();
 }
 
-
-
-//----------------------------------------------------------------//
-MOAITBImageLoader::MOAITBImageLoader():
-	mWidth( 0 ),
-	mHeight( 0 ),
-	mImage( 0 )
-{
-}
-
-MOAITBImageLoader::~MOAITBImageLoader() {
-	if( this->mImage ) {
-		delete this->mImage;
-	}
-}
-
-int MOAITBImageLoader::Width() {
-	return this->mWidth;
-}
-
-int MOAITBImageLoader::Height() {
-	return this->mHeight;
-}
-
-bool MOAITBImageLoader::Init( cc8* filename ) {
-	MOAIImage* img = new MOAIImage();
-	bool succ = img->Load( filename, MOAIImageTransform::TRUECOLOR );
-
-	if( !succ ) {
-		delete img;
-		this->mImage = NULL;
-		return false;
-
-	} else {
-		if( img->GetColorFormat() != ZLColor::RGBA_8888 ) {
-			MOAIImage* converted = new MOAIImage();
-			converted->Convert( *img, ZLColor::RGBA_8888, MOAIImage::TRUECOLOR );
-			delete img;
-			this->mImage = converted;
-		} else {
-			this->mImage = img;
-		}
-		this->mWidth = this->mImage->GetWidth();
-		this->mHeight = this->mImage->GetHeight();
-		return succ;
-
-	}
-}
-
-uint32* MOAITBImageLoader::Data() {
-	if( !this->mImage ) return 0;
-	return (uint32*)this->mImage->GetBitmap();
-}
-
-//----------------------------------------------------------------//
 TBImageLoader *TBImageLoader::CreateFromFile(const char *filename)
 {
-	MOAITBImageLoader* loader = new MOAITBImageLoader();
-	if( loader->Init( filename ) ) {
-		return loader;
-	}
-	delete loader;
-	return nullptr;
+	return MOAITBMgr::Get().CreateImageLoader( filename );	
 }

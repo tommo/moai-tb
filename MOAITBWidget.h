@@ -157,6 +157,9 @@ private:
 	static int _getGravity       ( lua_State* L );
 	static int _setGravity       ( lua_State* L );
 
+	static int _setSkin          ( lua_State* L );
+	static int _getSkin          ( lua_State* L );
+
 	static int _setSkinBg        ( lua_State* L );
 	static int _getSkinBg        ( lua_State* L );
 

@@ -1,5 +1,6 @@
 #include "MOAITBWidget.h"
 #include "MOAITBMgr.h"
+#include "MOAITBSkin.h"
 #include "tb_window.h"
 #include "tb_popup_window.h"
 
@@ -657,6 +658,25 @@ int MOAITBWidget::_setGravity ( lua_State *L ) {
 	return 0;
 }
 
+int MOAITBWidget::_getSkin ( lua_State *L ) {
+	MOAI_LUA_SETUP( MOAITBWidget, "U" )
+	// u32 id = self->GetInternal()->GetSkin();
+	// state.Push( id );
+	//TODO:
+	return 0;
+}
+
+int MOAITBWidget::_setSkin ( lua_State *L ) {
+	MOAI_LUA_SETUP( MOAITBWidget, "U" )
+	//TODO:
+	MOAITBSkin* skin = state.GetLuaObject< MOAITBSkin >( 2, true );
+	if( skin ) {
+		self->GetInternal()->SetSkin( skin->GetInternal() );
+	}
+	return 0;
+}
+
+
 int MOAITBWidget::_getSkinBg ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "U" )
 	u32 id = self->GetInternal()->GetSkinBg();
@@ -1210,6 +1230,9 @@ void MOAITBWidget::RegisterLuaFuncs ( MOAILuaState& state ) {
 		
 		{ "getGravity",            _getGravity           },
 		{ "setGravity",            _setGravity           },
+
+		{ "setSkin",               _setSkin              },
+		{ "getSkin",               _getSkin              },
 
 		{ "setSkinBg",             _setSkinBg            },
 		{ "getSkinBg",             _getSkinBg            },
