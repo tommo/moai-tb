@@ -261,6 +261,16 @@ int MOAITBWidget::_getRect ( lua_State *L ) {
 	return 4;
 }
 
+int MOAITBWidget::_getPaddingRect ( lua_State *L ) {
+	MOAI_LUA_SETUP( MOAITBWidget, "U" )
+	TBRect rect = self->GetInternal()->GetPaddingRect();
+	state.Push( rect.x );
+	state.Push( -rect.y );
+	state.Push( rect.w );
+	state.Push( rect.h );
+	return 4;
+}
+
 int MOAITBWidget::_seekLoc ( lua_State* L ) {
 	MOAI_LUA_SETUP ( MOAITBWidget, "U" )
 
@@ -445,7 +455,6 @@ int MOAITBWidget::_setFixedSize ( lua_State *L ) {
 }
 
 
-
 int MOAITBWidget::_invalidate ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "U" )	
 	self->GetInternal()->Invalidate();
@@ -472,6 +481,7 @@ int MOAITBWidget::_invalidateSkinStates ( lua_State *L ) {
 	self->GetInternal()->InvalidateSkinStates();
 	return 0;
 }
+
 
 int MOAITBWidget::_die ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "U" )
@@ -1425,6 +1435,8 @@ void MOAITBWidget::RegisterLuaFuncs ( MOAILuaState& state ) {
 
 		{ "getRect",               _getRect              },
 		{ "setRect",               _setRect              },
+		{ "getPaddingRect",        _getPaddingRect       },
+
 		{ "getLoc",                _getLoc               },
 		{ "setLoc",                _setLoc               },
 		{ "seekLoc",               _seekLoc              },

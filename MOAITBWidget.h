@@ -122,6 +122,7 @@ private:
 
 	static int _getRect          ( lua_State* L );
 	static int _setRect          ( lua_State* L );
+	static int _getPaddingRect   ( lua_State* L );
 	static int _getLoc           ( lua_State* L );
 	static int _setLoc           ( lua_State* L );
 	static int _seekLoc          ( lua_State* L );
@@ -141,6 +142,7 @@ private:
 	static int _invalidateStates ( lua_State* L );
 	static int _invalidateSkinStates ( lua_State* L );
 	static int _invalidateLayout ( lua_State* L );
+	
 	static int _die              ( lua_State* L );
 	static int _isDying          ( lua_State* L );
 
