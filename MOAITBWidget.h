@@ -13,6 +13,22 @@ class MOAITBWidget;
 class MOAITBWidgetRef;
 class MOAITBWidgetListener;
 
+#define MOAI_TB_NEW( ThisClass )\
+	static int _new ( lua_State* L ) {\
+		MOAILuaState state ( L );\
+		ThisClass *widget = new ThisClass();\
+		widget->Init();\
+		widget->PushLuaUserdata( state );\
+		return 1;\
+	}	
+
+#define MOAI_TB_GET_INTERNAL( TBClazz )\
+	inline TBClazz* GetInternal() { return static_cast< TBClazz* >( this->mInternal ); }
+
+#define MOAI_TB_CREATE_INTERNAL( TBClazz )\
+	TBWidget* CreateInternal() { return new TBClazz(); }
+
+
 //----------------------------------------------------------------//
 class MOAITBWidgetRef :
 	public TBTypedObject
@@ -237,6 +253,8 @@ private:
 	static int _sendMouseButtonEvent ( lua_State* L );
 	static int _sendMouseScrollEvent ( lua_State* L );
 
+	MOAI_TB_NEW( MOAITBWidget )
+
 	//----------------------------------------------------------------//
 	void OnInternalLost ();
 	void ClearWidgetListener  ();
@@ -348,20 +366,5 @@ public://STATIC
 
 };
 
-
-#define MOAI_TB_NEW( ThisClass )\
-	static int _new ( lua_State* L ) {\
-		MOAILuaState state ( L );\
-		ThisClass *widget = new ThisClass();\
-		widget->Init();\
-		widget->PushLuaUserdata( state );\
-		return 1;\
-	}	
-
-#define MOAI_TB_GET_INTERNAL( TBClazz )\
-	inline TBClazz* GetInternal() { return static_cast< TBClazz* >( this->mInternal ); }
-
-#define MOAI_TB_CREATE_INTERNAL( TBClazz )\
-	TBWidget* CreateInternal() { return new TBClazz(); }
 
 #endif

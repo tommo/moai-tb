@@ -1404,7 +1404,7 @@ void MOAITBWidget::RegisterLuaClass ( MOAILuaState& state ) {
 	state.SetField ( -1, "WIDGET_GRAVITY_DEFAULT",    ( u32 ) WIDGET_GRAVITY_DEFAULT    );
 
 	luaL_Reg regTable [] = {
-		{ "new",               MOAILogMessages::_alertNewIsUnsupported },
+		{ "new",               _new },
 		{ "setAutoFocusState", _setAutoFocusState  },
 		{ "getHoveredWidget",  _getHoveredWidget   },
 		{ "getFocusedWidget",  _getFocusedWidget   },
