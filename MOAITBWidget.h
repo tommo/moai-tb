@@ -91,9 +91,14 @@ private:
 	friend class MOAITBWidgetRef;
 	friend class MOAITBWidgetListener;
 
+	ZLVec2D   mPointerLoc;
 
 	//----------------------------------------------------------------//
-	static int _TBID             ( lua_State* L );
+	static int _TBID              ( lua_State* L );
+	static int _setAutoFocusState ( lua_State* L );
+	static int _getHoveredWidget  ( lua_State* L );
+	static int _getFocusedWidget  ( lua_State* L );
+	static int _getCapturedWidget ( lua_State* L );
 
 	//----------------------------------------------------------------//
 	static int _getTBClassName   ( lua_State* L );
@@ -103,8 +108,10 @@ private:
 	static int _setRect          ( lua_State* L );
 	static int _getLoc           ( lua_State* L );
 	static int _setLoc           ( lua_State* L );
+	static int _seekLoc          ( lua_State* L );
 	static int _getSize          ( lua_State* L );
 	static int _setSize          ( lua_State* L );
+	static int _seekSize         ( lua_State* L );
 
 	static int _setMinSize       ( lua_State* L );
 	static int _getMinSize       ( lua_State* L );
@@ -136,10 +143,10 @@ private:
 	static int _getStateRaw      ( lua_State* L );
 	static int _setStateRaw      ( lua_State* L );
 	static int _getAutoState     ( lua_State* L );
-	static int _setAutoFocusState( lua_State* L );
 
 	static int _getOpacity       ( lua_State* L );
 	static int _setOpacity       ( lua_State* L );
+	static int _seekOpacity      ( lua_State* L );
 	static int _isVisible        ( lua_State* L );
 	static int _isLocalVisible   ( lua_State* L );
 	static int _setVisible       ( lua_State* L );
@@ -223,6 +230,13 @@ private:
 	static int _createPopupWindow   ( lua_State* L );
 	static int _createPopupMenu     ( lua_State* L );
 
+	static int _sendKeyEvent         ( lua_State* L );
+	static int _sendSpecialKeyEvent  ( lua_State* L );
+	static int _sendMouseWheelEvent  ( lua_State* L );
+	static int _sendMouseMoveEvent   ( lua_State* L );
+	static int _sendMouseButtonEvent ( lua_State* L );
+	static int _sendMouseScrollEvent ( lua_State* L );
+
 	//----------------------------------------------------------------//
 	void OnInternalLost ();
 	void ClearWidgetListener  ();
@@ -268,7 +282,20 @@ public:
 	void    SetParent  ( MOAITBWidget* widget );
 
 	//----------------------------------------------------------------//
-	DECL_LUA_FACTORY( MOAITBWidget )
+	DECL_LUA_FACTORY ( MOAITBWidget )
+	DECL_ATTR_HELPER ( MOAITBWidget )
+
+	enum {
+		ATTR_X_LOC,
+		ATTR_Y_LOC,
+		
+		ATTR_X_SIZE,
+		ATTR_Y_SIZE,
+		
+		ATTR_OPACITY,
+
+		TOTAL_ATTR,
+	};
 
 	MOAITBWidget();
 	~MOAITBWidget();
@@ -276,8 +303,7 @@ public:
 	void RegisterLuaClass ( MOAILuaState& state );
 	void RegisterLuaFuncs ( MOAILuaState& state );
 
-
-public:
+public://STATIC
 	//----------------------------------------------------------------//
 	static TBID GetTBID ( MOAILuaState& state, int idx ) {
 		if( state.IsType( idx, LUA_TSTRING ) ) {
@@ -316,6 +342,10 @@ public:
 	static MOAITBWidget* _TB2MOAI ( TBWidget* widget );
 	static bool PushTBWidget      ( MOAILuaState& state, TBWidget* widget );
 	static bool PushTBWidgetOrNil ( MOAILuaState& state, TBWidget* widget );
+
+	//----------------------------------------------------------------//
+	bool			ApplyAttrOp				( u32 attrID, MOAIAttrOp& attrOp, u32 op );
+
 };
 
 

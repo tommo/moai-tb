@@ -11,7 +11,6 @@
 #include "tb_skin.h"
 #include "tb_core.h"
 #include "tb_font_renderer.h"
-#include "animation/tb_widget_animation.h"
 
 
 
@@ -73,7 +72,6 @@ int MOAITBMgr::_init ( lua_State* L ) {
 	MOAILuaState state ( L );
 	MOAITBMgr& mgr = MOAITBMgr::Get();
 	if( !tb_core_is_initialized() ) {
-		TBWidgetsAnimationManager::Init();
 		cc8* lngFile = state.GetValue < cc8* >( 1, "" );
 		tb_core_init( mgr.mRenderer, lngFile );
 		g_font_manager->AddRenderer( new MOAITBFontRenderer() );
@@ -235,7 +233,6 @@ MOAITBMgr::~MOAITBMgr ()
 		this->LuaRelease( font );
 	}
 	if( tb_core_is_initialized() ) { 
-		TBWidgetsAnimationManager::Shutdown();
 		tb_core_shutdown();
 	}
 }

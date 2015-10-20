@@ -1,8 +1,10 @@
 #include "MOAITBWidget.h"
 #include "MOAITBMgr.h"
 #include "MOAITBSkin.h"
+#include "tb_widgets.h"
 #include "tb_window.h"
 #include "tb_popup_window.h"
+
 
 //----------------------------------------------------------------//
 //----------------------------------------------------------------//
@@ -226,14 +228,6 @@ MOAITBWidgetRef::~MOAITBWidgetRef () {
 //----------------------------------------------------------------//
 //----------------------------------------------------------------//
 
-int MOAITBWidget::_TBID ( lua_State *L ) {
-	MOAILuaState state ( L );
-	TBID id = GetTBID( state, 1 );
-	state.Push( (u32) id );
-	return 1;
-}
-
-
 int MOAITBWidget::_getTBClassName ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "U" )
 	state.Push( self->GetInternal()->GetClassName() );
@@ -253,7 +247,7 @@ int MOAITBWidget::_setRect ( lua_State *L ) {
 	int y0 = state.GetValue < int >( 3, 0 );
 	int w  = state.GetValue < int >( 4, 0 );
 	int h  = state.GetValue < int >( 5, 0 );
-	self->GetInternal()->SetRect( TBRect( x0, y0, w, h ) );
+	self->GetInternal()->SetRect( TBRect( x0, -y0, w, h ) );
 	return 0;
 }
 
@@ -261,17 +255,79 @@ int MOAITBWidget::_getRect ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "U" )
 	TBRect rect = self->GetInternal()->GetRect();
 	state.Push( rect.x );
-	state.Push( rect.y );
+	state.Push( -rect.y );
 	state.Push( rect.w );
 	state.Push( rect.h );
 	return 4;
+}
+
+int MOAITBWidget::_seekLoc ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBWidget, "U" )
+
+	float delay		= state.GetValue < float >( 4, 0.0f );
+	
+	if ( delay > 0.0f ) {
+
+		u32 mode = state.GetValue < u32 >( 5, ZLInterpolate::kSmooth );		
+		
+		MOAIEaseDriver* action = new MOAIEaseDriver ();
+		
+		TBRect rect = self->GetInternal()->GetRect();
+		action->ParseForSeek ( state, 2, self, 2, mode,
+			MOAITBWidgetAttr::Pack ( ATTR_X_LOC ), (float)rect.x, 0.0f,
+			MOAITBWidgetAttr::Pack ( ATTR_Y_LOC ), -(float)rect.y, 0.0f
+		);
+		
+		action->SetSpan ( delay );
+		action->Start ( false );
+		action->PushLuaUserdata ( state );
+
+		return 1;
+	}
+
+	int x = state.GetValue < int >( 2, 0 );
+	int y = state.GetValue < int >( 3, 0 );
+	self->GetInternal()->SetPosition( TBPoint( x, -y ) );
+
+	return 0;
+}
+
+int MOAITBWidget::_seekSize ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBWidget, "U" )
+
+	float delay		= state.GetValue < float >( 4, 0.0f );
+	
+	if ( delay > 0.0f ) {
+
+		u32 mode = state.GetValue < u32 >( 5, ZLInterpolate::kSmooth );		
+		
+		MOAIEaseDriver* action = new MOAIEaseDriver ();
+		
+		TBRect rect = self->GetInternal()->GetRect();
+		action->ParseForSeek ( state, 2, self, 2, mode,
+			MOAITBWidgetAttr::Pack ( ATTR_X_SIZE ), (float)rect.w, 0.0f,
+			MOAITBWidgetAttr::Pack ( ATTR_Y_SIZE ), (float)rect.h, 0.0f
+		);
+		
+		action->SetSpan ( delay );
+		action->Start ( false );
+		action->PushLuaUserdata ( state );
+
+		return 1;
+	}
+
+	int w = state.GetValue < int >( 2, 0 );
+	int h = state.GetValue < int >( 3, 0 );
+	self->GetInternal()->SetSize( w, h );
+	
+	return 0;
 }
 
 int MOAITBWidget::_getLoc ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "U" )
 	TBRect rect = self->GetInternal()->GetRect();
 	state.Push( rect.x );
-	state.Push( rect.y );
+	state.Push( -rect.y );
 	return 2;
 }
 
@@ -279,7 +335,7 @@ int MOAITBWidget::_setLoc ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "U" )
 	int x = state.GetValue < int >( 2, 0 );
 	int y = state.GetValue < int >( 3, 0 );
-	self->GetInternal()->SetPosition( TBPoint( x, y ) );
+	self->GetInternal()->SetPosition( TBPoint( x, -y ) );
 	return 0;
 }
 
@@ -518,13 +574,6 @@ int MOAITBWidget::_getAutoState ( lua_State *L ) {
 	return 1;
 }
 
-int MOAITBWidget::_setAutoFocusState ( lua_State *L ) {
-	MOAI_LUA_SETUP( MOAITBWidget, "UB" )
-	bool flag = state.GetValue < bool >( 2, true );
-	self->GetInternal()->SetAutoFocusState( flag );
-	return 0;
-}
-
 int MOAITBWidget::_getOpacity ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "U" )
 	float opacity = self->GetInternal()->GetOpacity();
@@ -536,6 +585,35 @@ int MOAITBWidget::_setOpacity ( lua_State *L ) {
 	MOAI_LUA_SETUP( MOAITBWidget, "UN" )
 	float opacity = state.GetValue < float >( 2, 1.0 );
 	self->GetInternal()->SetOpacity( opacity );
+	return 0;
+}
+
+int MOAITBWidget::_seekOpacity ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBWidget, "U" )
+
+	float delay		= state.GetValue < float >( 3, 0.0f );
+	
+	if ( delay > 0.0f ) {
+
+		u32 mode = state.GetValue < u32 >( 6, ZLInterpolate::kSmooth );		
+		
+		MOAIEaseDriver* action = new MOAIEaseDriver ();
+		
+		float opacity = self->GetInternal()->GetOpacity();
+		action->ParseForSeek ( state, 2, self, 1, mode,
+			MOAITBWidgetAttr::Pack ( ATTR_OPACITY ), opacity, 0.0f
+		);
+		
+		action->SetSpan ( delay );
+		action->Start ( false );
+		action->PushLuaUserdata ( state );
+
+		return 1;
+	}
+
+	float opacity = state.GetValue < float >( 2, 1.0f );
+	self->GetInternal()->SetOpacity( opacity );
+
 	return 0;
 }
 
@@ -1054,6 +1132,96 @@ int MOAITBWidget::_createPopupMenu ( lua_State* L ) {
 	//TODO
 	return 0;
 }
+
+//STATIC
+int MOAITBWidget::_TBID ( lua_State *L ) {
+	MOAILuaState state ( L );
+	TBID id = GetTBID( state, 1 );
+	state.Push( (u32) id );
+	return 1;
+}
+
+int MOAITBWidget::_setAutoFocusState ( lua_State *L ) {
+	MOAILuaState state ( L );
+	bool flag = state.GetValue < bool >( 1, true );
+	TBWidget::SetAutoFocusState( flag );
+	return 0;
+}
+
+
+int MOAITBWidget::_getHoveredWidget ( lua_State *L ) {
+	MOAILuaState state ( L );
+	PushTBWidgetOrNil( state, TBWidget::GetHoveredWidget() );
+	return 1;
+}
+
+int MOAITBWidget::_getFocusedWidget ( lua_State *L ) {
+	MOAILuaState state ( L );
+	PushTBWidgetOrNil( state, TBWidget::GetFocusedWidget() );
+	return 1;
+}
+
+int MOAITBWidget::_getCapturedWidget ( lua_State *L ) {
+	MOAILuaState state ( L );
+	PushTBWidgetOrNil( state, TBWidget::GetCapturedWidget() );
+	return 1;
+}
+
+int MOAITBWidget::_sendKeyEvent ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBWidget, "UNB" )
+	u32  key      = state.GetValue < u32  >( 2, 0 );
+	bool down     = state.GetValue < bool >( 3, true );
+	u32 modifiers = state.GetValue < u32 >( 4, TB_MODIFIER_NONE );
+	self->GetInternal()->InvokeKey( key, TB_KEY_UNDEFINED, (MODIFIER_KEYS)modifiers, down );
+	return 0;
+}
+
+int MOAITBWidget::_sendSpecialKeyEvent ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBWidget, "UNB" )
+	u32  special  = state.GetValue < u32  >( 2, 0 );
+	bool down     = state.GetValue < bool >( 3, true );
+	u32 modifiers = state.GetValue < u32 >( 4, TB_MODIFIER_NONE );
+	self->GetInternal()->InvokeKey( 0, (SPECIAL_KEY)special, (MODIFIER_KEYS)modifiers, down );
+	return 0;
+}
+
+int MOAITBWidget::_sendMouseMoveEvent ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBWidget, "UNNNN" )
+	float x  = state.GetValue < float >( 2, 0.0f );
+	float y  = state.GetValue < float >( 3, 0.0f );
+	float dx = state.GetValue < float >( 4, 0.0f );
+	float dy = state.GetValue < float >( 5, 0.0f );
+	u32 modifiers = state.GetValue < u32 >( 6, TB_MODIFIER_NONE );
+	self->GetInternal()->InvokePointerMove( x, y, (MODIFIER_KEYS)modifiers, false );
+	self->mPointerLoc.Init( x, y );
+	return 0;
+}
+
+int MOAITBWidget::_sendMouseButtonEvent ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBWidget, "UNB" )
+	u32 button    = state.GetValue < u32 >( 2, 0 );
+	bool down     = state.GetValue < bool >( 3, false );
+	u32 modifiers = state.GetValue < u32 >( 4, TB_MODIFIER_NONE );
+	if( down ) {
+		self->GetInternal()->InvokePointerDown( self->mPointerLoc.mX, self->mPointerLoc.mY, 1, (MODIFIER_KEYS)modifiers, false );
+	} else {
+		self->GetInternal()->InvokePointerUp( self->mPointerLoc.mX, self->mPointerLoc.mY, (MODIFIER_KEYS)modifiers, false );
+	}
+	return 0;
+}
+
+int MOAITBWidget::_sendMouseScrollEvent ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBWidget, "UNN" )
+	float x  = state.GetValue < float >( 2, 0.0f );
+	float y  = state.GetValue < float >( 3, 0.0f );
+	float dx = state.GetValue < float >( 4, 0.0f );
+	float dy = state.GetValue < float >( 5, 0.0f );
+	u32 modifiers = state.GetValue < u32 >( 6, TB_MODIFIER_NONE );
+	self->GetInternal()->InvokeWheel( x, y, dx, dy, (MODIFIER_KEYS)modifiers );
+	return 0;
+}
+
+
 //----------------------------------------------------------------//
 MOAITBWidget::MOAITBWidget () :
 	mInternal( NULL ),
@@ -1116,9 +1284,47 @@ void MOAITBWidget::AffirmListenerTable ( MOAILuaState& state ) {
 	this->mInternal->AddListener( this->mWidgetListener );
 }
 
+
+//----------------------------------------------------------------//
+bool MOAITBWidget::ApplyAttrOp ( u32 attrID, MOAIAttrOp& attrOp, u32 op ) {
+	if ( MOAITBWidgetAttr::Check ( attrID )) {
+		float x, y, w, h, opacity;
+		TBRect rect = this->GetInternal()->GetRect();
+		switch ( UNPACK_ATTR ( attrID ) ) {
+			case ATTR_X_LOC:
+				x = attrOp.Apply ( (float)rect.x, op, MOAIAttrOp::ATTR_READ_WRITE, MOAIAttrOp::ATTR_TYPE_FLOAT );
+				this->GetInternal()->SetPosition( TBPoint( (int)x, rect.y ) );
+				return true;
+			case ATTR_Y_LOC:
+				y = attrOp.Apply ( -(float)rect.y, op, MOAIAttrOp::ATTR_READ_WRITE, MOAIAttrOp::ATTR_TYPE_FLOAT );
+				this->GetInternal()->SetPosition( TBPoint( rect.x, -(int)y ) );
+				return true;
+			case ATTR_X_SIZE:
+				w = attrOp.Apply ( (float)rect.w, op, MOAIAttrOp::ATTR_READ_WRITE, MOAIAttrOp::ATTR_TYPE_FLOAT );
+				this->GetInternal()->SetSize( (int)w, rect.h );
+				return true;
+			case ATTR_Y_SIZE:
+				h = attrOp.Apply ( (float)rect.h, op, MOAIAttrOp::ATTR_READ_WRITE, MOAIAttrOp::ATTR_TYPE_FLOAT );
+				this->GetInternal()->SetSize( rect.w, (int)h );
+				return true;
+			case ATTR_OPACITY:
+				opacity = attrOp.Apply ( this->GetInternal()->GetOpacity(), op, MOAIAttrOp::ATTR_READ_WRITE, MOAIAttrOp::ATTR_TYPE_FLOAT );
+				this->GetInternal()->SetOpacity( opacity );
+				return true;
+		}
+	}
+	return false;
+}
+
 //----------------------------------------------------------------//
 void MOAITBWidget::RegisterLuaClass ( MOAILuaState& state ) {
 	MOAINode::RegisterLuaClass ( state );
+	//Attr
+	state.SetField ( -1, "ATTR_X_LOC",			MOAITBWidgetAttr::Pack ( ATTR_X_LOC ));
+	state.SetField ( -1, "ATTR_Y_LOC",			MOAITBWidgetAttr::Pack ( ATTR_Y_LOC ));
+	state.SetField ( -1, "ATTR_X_SIZE",			MOAITBWidgetAttr::Pack ( ATTR_X_SIZE ));
+	state.SetField ( -1, "ATTR_Y_SIZE",			MOAITBWidgetAttr::Pack ( ATTR_Y_SIZE ));
+	
 	//WIDGET_STATE
 	state.SetField ( -1, "WIDGET_STATE_NONE",         ( u32 )WIDGET_STATE_NONE        );
 	state.SetField ( -1, "WIDGET_STATE_DISABLED",     ( u32 )WIDGET_STATE_DISABLED    );
@@ -1129,6 +1335,46 @@ void MOAITBWidget::RegisterLuaClass ( MOAILuaState& state ) {
 
 	state.SetField ( -1, "WIDGET_STATE_ALL",          ( u32 )WIDGET_STATE_ALL     );
 
+	//WIDGET_FOCUS_REASON
+	state.SetField ( -1, "WIDGET_FOCUS_REASON_NAVIGATION",  ( u32 )WIDGET_FOCUS_REASON_NAVIGATION );
+	state.SetField ( -1, "WIDGET_FOCUS_REASON_POINTER",     ( u32 )WIDGET_FOCUS_REASON_POINTER    );
+	state.SetField ( -1, "WIDGET_FOCUS_REASON_UNKNOWN",     ( u32 )WIDGET_FOCUS_REASON_UNKNOWN    );
+
+	//MODIFIER KEY
+	state.SetField ( -1, "MODIFIER_NONE",  (u32)TB_MODIFIER_NONE );
+	state.SetField ( -1, "MODIFIER_CTRL",  (u32)TB_CTRL          );
+	state.SetField ( -1, "MODIFIER_SHIFT", (u32)TB_SHIFT         );
+	state.SetField ( -1, "MODIFIER_ALT",   (u32)TB_ALT           );
+	state.SetField ( -1, "MODIFIER_SUPER", (u32)TB_SUPER         );
+
+	//SPEICIAL KEY
+	state.SetField ( -1, "KEY_UNDEFINED",  (u32)TB_KEY_UNDEFINED );
+	state.SetField ( -1, "KEY_UP",         (u32)TB_KEY_UP        );
+	state.SetField ( -1, "KEY_DOWN",       (u32)TB_KEY_DOWN      );
+	state.SetField ( -1, "KEY_LEFT",       (u32)TB_KEY_LEFT      );
+	state.SetField ( -1, "KEY_RIGHT",      (u32)TB_KEY_RIGHT     );
+	state.SetField ( -1, "KEY_PAGE_UP",    (u32)TB_KEY_PAGE_UP   );
+	state.SetField ( -1, "KEY_PAGE_DOWN",  (u32)TB_KEY_PAGE_DOWN );
+	state.SetField ( -1, "KEY_HOME",       (u32)TB_KEY_HOME      );
+	state.SetField ( -1, "KEY_END",        (u32)TB_KEY_END       );
+	state.SetField ( -1, "KEY_TAB",        (u32)TB_KEY_TAB       );
+	state.SetField ( -1, "KEY_BACKSPACE",  (u32)TB_KEY_BACKSPACE );
+	state.SetField ( -1, "KEY_INSERT",     (u32)TB_KEY_INSERT    );
+	state.SetField ( -1, "KEY_DELETE",     (u32)TB_KEY_DELETE    );
+	state.SetField ( -1, "KEY_ENTER",      (u32)TB_KEY_ENTER     );
+	state.SetField ( -1, "KEY_ESC",        (u32)TB_KEY_ESC       );
+	state.SetField ( -1, "KEY_F1",         (u32)TB_KEY_F1        );
+	state.SetField ( -1, "KEY_F2",         (u32)TB_KEY_F2        );
+	state.SetField ( -1, "KEY_F3",         (u32)TB_KEY_F3        );
+	state.SetField ( -1, "KEY_F4",         (u32)TB_KEY_F4        );
+	state.SetField ( -1, "KEY_F5",         (u32)TB_KEY_F5        );
+	state.SetField ( -1, "KEY_F6",         (u32)TB_KEY_F6        );
+	state.SetField ( -1, "KEY_F7",         (u32)TB_KEY_F7        );
+	state.SetField ( -1, "KEY_F8",         (u32)TB_KEY_F8        );
+	state.SetField ( -1, "KEY_F9",         (u32)TB_KEY_F9        );
+	state.SetField ( -1, "KEY_F10",        (u32)TB_KEY_F10       );
+	state.SetField ( -1, "KEY_F11",        (u32)TB_KEY_F11       );
+	state.SetField ( -1, "KEY_F12",        (u32)TB_KEY_F12       );
 	//AXIS
 	state.SetField ( -1, "AXIS_X",      ( u32 )AXIS_X     );
 	state.SetField ( -1, "AXIS_Y",      ( u32 )AXIS_Y     );
@@ -1158,8 +1404,12 @@ void MOAITBWidget::RegisterLuaClass ( MOAILuaState& state ) {
 	state.SetField ( -1, "WIDGET_GRAVITY_DEFAULT",    ( u32 ) WIDGET_GRAVITY_DEFAULT    );
 
 	luaL_Reg regTable [] = {
-		{ "new",             MOAILogMessages::_alertNewIsUnsupported },
-		{ "TBID",            _TBID },
+		{ "new",               MOAILogMessages::_alertNewIsUnsupported },
+		{ "setAutoFocusState", _setAutoFocusState  },
+		{ "getHoveredWidget",  _getHoveredWidget   },
+		{ "getFocusedWidget",  _getFocusedWidget   },
+		{ "getCapturedWidget", _getCapturedWidget  },
+		{ "TBID",              _TBID },
 		{ NULL, NULL }
 	};
 	luaL_register ( state, 0, regTable );
@@ -1177,8 +1427,10 @@ void MOAITBWidget::RegisterLuaFuncs ( MOAILuaState& state ) {
 		{ "setRect",               _setRect              },
 		{ "getLoc",                _getLoc               },
 		{ "setLoc",                _setLoc               },
+		{ "seekLoc",               _seekLoc              },
 		{ "getSize",               _getSize              },
 		{ "setSize",               _setSize              },
+		{ "seekSize",              _seekSize             },
 
 		{ "setMinSize",            _setMinSize           },
 		{ "getMinSize",            _getMinSize           },
@@ -1209,10 +1461,10 @@ void MOAITBWidget::RegisterLuaFuncs ( MOAILuaState& state ) {
 		{ "getStateRaw",           _getStateRaw          },
 		{ "setStateRaw",           _setStateRaw          },
 		{ "getAutoState",          _getAutoState         },
-		{ "setAutoFocusState",     _setAutoFocusState    },
 		
 		{ "getOpacity",            _getOpacity           },
 		{ "setOpacity",            _setOpacity           },
+		{ "seekOpacity",           _seekOpacity          },
 		{ "isVisible",             _isVisible            },
 		{ "isLocalVisible",        _isLocalVisible       },
 		{ "setVisible",            _setVisible           },
@@ -1295,6 +1547,13 @@ void MOAITBWidget::RegisterLuaFuncs ( MOAILuaState& state ) {
 
 		{ "createPopupWindow",     _createPopupWindow    },
 		{ "createPopupMenu",       _createPopupMenu      },
+
+		{ "sendMouseMoveEvent",    _sendMouseMoveEvent   },
+		{ "sendMouseButtonEvent",  _sendMouseButtonEvent },
+		{ "sendMouseScrollEvent",  _sendMouseScrollEvent },
+		{ "sendKeyEvent",          _sendKeyEvent         },
+		{ "sendSpecialKeyEvent",   _sendSpecialKeyEvent  },
+
 		{ NULL, NULL }
 	};
 	

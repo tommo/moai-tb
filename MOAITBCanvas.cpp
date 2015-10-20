@@ -2,7 +2,6 @@
 #include "tb_widgets.h"
 #include "tb_window.h"
 #include "tb_widgets_common.h"
-#include "animation/tb_animation.h"
 #include "tb_node_tree.h"
 #include "tb_widgets_reader.h"
 
@@ -18,39 +17,6 @@ int MOAITBCanvas::_getRootWidget ( lua_State* L ) {
 	return 1;
 }
 
-
-int MOAITBCanvas::_sendKeyEvent ( lua_State* L ) {
-	MOAI_LUA_SETUP ( MOAITBCanvas, "UNB" )
-	u32  key  = state.GetValue < u32  >( 2, 0 );
-	bool down = state.GetValue < bool >( 3, true );
-	self->mRootWidget->InvokeKey( key, TB_KEY_UNDEFINED, TB_MODIFIER_NONE, down );
-	return 0;
-}
-
-int MOAITBCanvas::_sendMouseMoveEvent ( lua_State* L ) {
-	MOAI_LUA_SETUP ( MOAITBCanvas, "UNNNN" )
-	float x  = state.GetValue < float >( 2, 0.0f );
-	float y  = state.GetValue < float >( 3, 0.0f );
-	float dx = state.GetValue < float >( 4, 0.0f );
-	float dy = state.GetValue < float >( 5, 0.0f );
-	self->mRootWidget->InvokePointerMove( x, y, TB_MODIFIER_NONE, false );
-	self->mPointerLoc.Init( x, y );
-	return 0;
-}
-
-int MOAITBCanvas::_sendMouseButtonEvent ( lua_State* L ) {
-	MOAI_LUA_SETUP ( MOAITBCanvas, "UNB" )
-	u32 button  = state.GetValue < u32 >( 2, 0 );
-	bool down   = state.GetValue < bool >( 3, false );
-	if( down ) {
-		self->mRootWidget->InvokePointerDown( self->mPointerLoc.mX, self->mPointerLoc.mY, 1, TB_MODIFIER_NONE, false );
-	} else {
-		self->mRootWidget->InvokePointerUp( self->mPointerLoc.mX, self->mPointerLoc.mY, TB_MODIFIER_NONE, false );
-	}
-	return 0;
-}
-
-
 int MOAITBCanvas::_setSize ( lua_State* L ) {
 	MOAI_LUA_SETUP ( MOAITBCanvas, "UNN" )
 	
@@ -58,6 +24,13 @@ int MOAITBCanvas::_setSize ( lua_State* L ) {
 	float height = state.GetValue < float >( 3, 0.0f );
 	self->SetSize( width, height );
 	
+	return 0;
+}
+
+int MOAITBCanvas::_doStep ( lua_State* L ) {
+	MOAI_LUA_SETUP ( MOAITBCanvas, "U" )
+	float step = state.GetValue< float >( 2, 0.0f );
+	self->OnUpdate( step );
 	return 0;
 }
 
@@ -99,10 +72,8 @@ void MOAITBCanvas::RegisterLuaFuncs ( MOAILuaState& state ) {
 	
 	luaL_Reg regTable [] = {
 		{ "getRootWidget",            _getRootWidget        },
-		{ "sendMouseMoveEvent",       _sendMouseMoveEvent   },
-		{ "sendMouseButtonEvent",     _sendMouseButtonEvent },
-		{ "sendKeyEvent",             _sendKeyEvent         },
 		{ "setSize",                  _setSize              },
+		{ "doStep",                   _doStep               },
 		{ NULL, NULL }
 	};
 	
@@ -118,7 +89,6 @@ u32 MOAITBCanvas::OnGetModelBounds ( ZLBox& bounds ) {
 
 //----------------------------------------------------------------//
 void MOAITBCanvas::OnUpdate ( double step ) {
-  TBAnimationManager::Update();
 	this->mRootWidget->InvokeProcessStates();
 	this->mRootWidget->InvokeProcess();
 	TBMessageHandler::ProcessMessages();
@@ -144,6 +114,7 @@ void MOAITBCanvas::Draw ( int subPrimID, float lod ) {
 	renderer->BeginPaint( this->mWidth, this->mHeight );
 	this->mRootWidget->InvokePaint(TBWidget::PaintProps());
 	renderer->EndPaint();
+	renderer->PopCanvas( this );
 }
 
 //----------------------------------------------------------------//
